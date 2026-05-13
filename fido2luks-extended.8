@@ -1,0 +1,140 @@
+.\" SPDX-License-Identifier: GPL-2.0-or-later
+.TH FIDO2LUKS-EXTENDED 8 "2026-05-13" "fido2luks-extended 1.0.0" "System Administration"
+
+.SH NAME
+fido2luks\-extended \- unlock LUKS volumes at boot using a FIDO2 token
+
+.SH SYNOPSIS
+.B fido2luks\-extended
+
+.SH DESCRIPTION
+.B fido2luks\-extended
+is an initramfs-tools extension for unlocking LUKS encrypted volumes at boot
+time using a FIDO2 token, such as a YubiKey or Nitrokey.
+
+It installs an initramfs hook and a cryptsetup keyscript that allow a LUKS2
+volume enrolled with a systemd FIDO2 token to be unlocked during early boot.
+
+The keyscript supports Plymouth bootsplash integration and uses
+.BR fido2-token (1),
+.BR fido2-assert (1),
+.BR jq (1),
+and
+.BR cryptsetup (8)
+inside the initramfs environment.
+
+If FIDO2 unlocking fails, the script falls back to asking for the recovery
+LUKS passphrase.
+
+.SH FILES
+.TP
+.B /etc/initramfs-tools/hooks/fido2luks-extended
+Initramfs hook that copies required binaries into the initramfs image.
+
+.TP
+.B /lib/fido2luks-extended/keyscript.sh
+Cryptsetup keyscript used during initramfs boot.
+
+.TP
+.B /usr/share/doc/fido2luks-extended/README.md
+Package documentation.
+
+.SH CONFIGURATION
+The keyscript supports the following environment variables:
+
+.TP
+.B FIDO2LUKS_DEBUG
+Set to
+.B 1
+to enable technical debug messages. Defaults to
+.BR 0 .
+
+.TP
+.B FIDO2LUKS_LANG
+Language for user-facing messages. Supported values are
+.B en
+and
+.BR sl .
+Defaults to
+.BR en .
+
+.TP
+.B FIDO2LUKS_WAIT_SECONDS
+How long to wait for the FIDO2 USB key to appear during initramfs boot.
+Defaults to
+.BR 15 .
+
+.TP
+.B FIDO2LUKS_TOUCH_SECONDS
+How long to wait for user-presence touch confirmation.
+Defaults to
+.BR 20 .
+
+.SH SETUP
+The following commands should be run as root.
+
+To set an initial FIDO2 PIN, run:
+
+.EX
+fido2-token -S /dev/hidraw1
+.EE
+
+To enroll the FIDO2 device with LUKS2, run:
+
+.EX
+systemd-cryptenroll --fido2-device=auto \\
+  --fido2-with-client-pin=true \\
+  --fido2-with-user-presence=true \\
+  /dev/nvme0n1p5
+.EE
+
+In this example, the LUKS device is assumed to be:
+
+.EX
+/dev/nvme0n1p5
+.EE
+
+To configure
+.BR crypttab (5)
+to use the keyscript for a mapping named
+.BR nvme0n1p5_crypt ,
+run:
+
+.EX
+sed -i \\
+  '/^nvme0n1p5_crypt /{
+    /keyscript=/! s#$#,keyscript=/lib/fido2luks-extended/keyscript.sh#
+    s#keyscript=[^, ]*#keyscript=/lib/fido2luks-extended/keyscript.sh#
+  }' \\
+  /etc/crypttab
+.EE
+
+After installation or configuration changes, regenerate initramfs:
+
+.EX
+update-initramfs -u -k all
+.EE
+
+.SH DEPENDENCIES
+This package depends on
+.BR initramfs-tools ,
+.BR cryptsetup-initramfs ,
+.BR fido2-tools ,
+and
+.BR jq .
+
+.SH SEE ALSO
+.BR crypttab (5),
+.BR cryptsetup (8),
+.BR systemd-cryptenroll (1),
+.BR fido2-token (1),
+.BR fido2-assert (1),
+.BR update-initramfs (8)
+
+.SH AUTHOR
+Matej Kovačič, https://telefoncek.si.
+
+This script is based on fido2luks by Alberto Garcia.
+
+.SH LICENSE
+GPL-2.0-or-later.
