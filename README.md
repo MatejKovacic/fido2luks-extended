@@ -1,6 +1,6 @@
 # FIDO2LUKS extended
 
-An initramfs-tools extension to unlock LUKS encrypted volumes at boot time using a FIDO2 token (YubiKey, Nitrokey, ...).
+An initramfs-tools extension to unlock LUKS encrypted volumes at boot time using a FIDO2 token (YubiKey, Nitrokey,...). Based on [`fido2luks`](https://github.com/bertogg/fido2luks) by Alberto Garcia.
 
 `fido2luks-extended` is designed for scenarios where a FIDO2 token has been enrolled into a LUKS volume using `systemd-cryptenroll --fido2-device`, but SystemD itself is not used in the initramfs.
 
@@ -47,7 +47,7 @@ chmod 644 /usr/share/man/man8/fido2luks-extended.8.gz
 
 ## How to use it
 
-⚠️ **Warning**: in theory, this can render your system unbootable, so make sure that you have a backup of your files or a working initramfs that you can use as a fallback in case things go wrong. Practically, I did not had any problems with this scripz, but you have been warned.
+⚠️ **Warning**: in theory, this can render your system unbootable, so make sure that you have a backup of your files or a working initramfs that you can use as a fallback in case things go wrong. In practice, I did not had any problems with this script, but you have been warned.
 
 1. Install FIDO2 tools:
    ```
@@ -70,15 +70,15 @@ chmod 644 /usr/share/man/man8/fido2luks-extended.8.gz
 
 4. Generate a new initramfs with `update-initramfs -u`.
 
-That's it. Next time you boot the system, `fido2luks-extended` should detect if your FIDO2 token is inserted and use it to unlock the LUKS volume. If the token is not detected then it will fall back to using a regular passphrase as usual.
+That's it. Next time you boot the system, `fido2luks-extended` should detect if your FIDO2 token (security USB key) is inserted and use it to unlock the LUKS volume. If the token is not detected then it will fall back to using a regular passphrase as usual (called recovery passphrase).
 
 If you have multiple tokens you can enroll all of them, and `fido2luks-extended` will detect which one to use at boot time.
 
-If the token is connected but not detected during boot make sure that the initramfs contains the necessary drivers. Check your `initramfs.conf` and set `MODULES=most` or add the necessary modules manually.
+If the token is connected but not detected during boot, make sure that the initramfs contains the necessary drivers. Check your `initramfs.conf` and set `MODULES=most` or add the necessary modules manually.
 
 You can access man page with `man fido2luks-extended`.
 
-## Some useful commands
+## Some useful commands with your FIDO2 key
 
 List currently connected FIDO tokens:
 ```
@@ -151,7 +151,7 @@ Check out the scripts in the examples/ directory to see how to generate your own
 
 ## Credits and license
 
-Original `fido2luks` script was written by Alberto Garcia. `fido2luks-extended` with Plymouth bootsplash integration, multilingual support, support for managing debug messages, countdown for confirming physical presence, support for all usable SystemD/FIDO2 token records from the LUKS2 header and some security hardening was writen by Matej Kovačič.
+Original  [`fido2luks`](https://github.com/bertogg/fido2luks) script was written by Alberto Garcia. `fido2luks-extended` with Plymouth bootsplash integration, multilingual support, support for managing debug messages, countdown for confirming physical presence, support for all usable SystemD/FIDO2 token records from the LUKS2 header and some security hardening was writen by Matej Kovačič.
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
