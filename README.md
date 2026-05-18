@@ -4,7 +4,7 @@ An initramfs-tools extension to unlock LUKS encrypted volumes at boot time using
 
 `fido2luks-extended` is designed for scenarios where a FIDO2 token has been enrolled into a LUKS volume using `systemd-cryptenroll --fido2-device`, but SystemD itself is not used in the initramfs.
 
-Updated script has support for Plymouth bootsplash, has multilingual support (currently English and Slovenian language) and can suppress technical/debug messages and shown only user-friendly output.
+Updated script has support for Plymouth bootsplash, multilingual support (currently English and Slovenian language) and can suppress technical/debug messages and show only user-friendly output.
 
 <img width="556" height="353" alt="image" src="https://github.com/user-attachments/assets/47e7e01f-b0ff-4fbe-a4d6-f766086c74f2" />
 
@@ -38,13 +38,13 @@ chmod 644 /usr/share/man/man8/fido2luks-extended.8.gz
 Configuration can be done in `keyscript.sh`.
 
 **`FIDO2LUKS_DEBUG`**
-Set to `1` to enable technical debug messages. Defaults to `0`.
+Set to `1` to enable technical debug messages. Defaults to `0` (no debug messages).
 
 **`FIDO2LUKS_LANG`**
 Set the language for user-facing messages. Supported values are `en` (English) and `sl` (Slovenian).  Defaults to English.
               
 **`FIDO2LUKS_WAIT_SECONDS`**
-How many seconds to wait for the FIDO2 USB key to appear during initramfs boot. Default value is `15` seconds.
+How many seconds to wait for the FIDO2 USB key to appear during initramfs boot. Default value is `15` seconds. This means that user has 15 seconds to insert FIDO2 USB key during the boot in order to unlock LUKS volume with security USB key. 
 
 **`FIDO2LUKS_TOUCH_SECONDS`**
 How many seconds to wait for user-presence touch confirmation. Defaults value is `20` seconds. Please note that maximum number of seconds depends on FIDO2 key's firmware, but here you can set lower value.
@@ -72,7 +72,7 @@ How many seconds to wait for user-presence touch confirmation. Defaults value is
    /etc/crypttab
    ```
 
-4. Generate a new initramfs with `update-initramfs -u`.
+4. Generate a new initramfs with `update-initramfs -u -k all`.
 
 That's it. Next time you boot the system, `fido2luks-extended` should detect if your FIDO2 token (security USB key) is inserted and use it to unlock the LUKS volume. If the token is not detected then it will fall back to using a regular passphrase as usual (this is here called "recovery passphrase").
 
@@ -125,13 +125,13 @@ Using a FIDO2 security key with LUKS disk encryption significantly improves secu
 - Something you know (the PIN for your FIDO2 security key)
 - User presence, confirmed by physically touching the key
 
-Importantly, the PIN is verified inside the FIDO2 device itself, not by LUKS. The LUKS system never sees or stores the PIN.
+Important: the PIN is verified inside the FIDO2 device itself, not by LUKS. The LUKS system never sees or stores the PIN.
 
-However, security key can be lost, damaged, or unavailable. Also, there is a chance that kernel or initramfs updates may temporarily break FIDO2 support and in that case you will not be able to unlock the disk with FIDO2 security key. And finally, entering the wrong PIN too many times can lock the USB key.
+However, FIDO2 security key can be lost, damaged, or unavailable. Also, there is a chance that kernel or initramfs updates may temporarily break FIDO2 support and in that case you will not be able to unlock the disk with FIDO2 security key. And finally, entering the wrong PIN too many times can lock the USB security key.
 
-And if the PIN becomes blocked and must be reset, the FIDO2 credentials stored on the device are typically erased. This means the associated LUKS key will no longer work.
+And if the PIN becomes blocked and must be reset, the FIDO2 credentials stored on the USB device are typically erased. This means the associated LUKS key will no longer work.
 
-For these reasons, it is strongly recommended to always keep a backup LUKS passphrase and, ideally, multiple FIDO2 keys (this script already supports multiple security USB keys and (multiple) LUKS passwords).
+For these reasons, it is strongly recommended to always keep a backup (recovery) LUKS passphrase and, ideally, have multiple FIDO2 keys (this script already supports multiple security USB keys and (multiple) LUKS passwords).
 
 Best practice for high assurance would be:
 - use 2–3 FIDO2 keys (different vendors if possible)
@@ -143,13 +143,13 @@ If you are not interested in the technical details you can skip this section.
 
 When SystemD enrolls a FIDO2 token into a LUKS volume it uses an extension called hmac-secret, supported by many hardware tokens.
 
-In a nutshell, the token calculates an HMAC using a secret that never leaves the device and a salt provided by the user. The result is sent back to the user and is used to unlock the LUKS volume.
+In a nutshell, the token calculates an HMAC using a secret that never leaves the FIDO2 device and a salt provided by the user. The result is sent back to the user and is used to unlock the LUKS volume.
 
 Since nothing is stored on the hardware token itself the user needs to provide some data that is kept on the LUKS header:
 - A credential ID (previously generated during the enrollment process).
 - A _relying party_ ID (`io.systemd.cryptsetup` in this case).
 - The aforementioned salt (which should be random and different for each LUKS volume).
-- Some settings such as whether to require a PIN or presence verification (usually physically touching the USB key).
+- Some settings such as whether to require a PIN or presence verification (this usually means physically touching the USB key).
 
 ## Credits and license
 
