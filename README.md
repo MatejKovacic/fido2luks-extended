@@ -8,19 +8,7 @@ Updated script has support for Plymouth bootsplash, has multilingual support (cu
 
 <img width="556" height="353" alt="image" src="https://github.com/user-attachments/assets/47e7e01f-b0ff-4fbe-a4d6-f766086c74f2" />
 
-Script was tested with Yubikey 5 NFC and Nitrokey 3A Mini on Debian 13.4, however it should support any FIDO2 key.
-
-To disable technical/debug messages (and show only messages suitable for non-technical users) change:
-
-`FIDO2LUKS_DEBUG=${FIDO2LUKS_DEBUG:-1}`
-
-to:
-
-`FIDO2LUKS_DEBUG=${FIDO2LUKS_DEBUG:-0}`
-
-Default language is English, you can change it to Slovenian:
-
-`FIDO2LUKS_LANG=${FIDO2LUKS_LANG:-sl}`
+Script was tested with Yubikey 5 NFC and Nitrokey 3A Mini on Debian 13.4, however it should support any FIDO2 key. It also supports multiple FIDO2 keys to unlock the volume.
 
 ## Installation
 
@@ -45,9 +33,25 @@ gzip -9n -c fido2luks-extended.8 > /usr/share/man/man8/fido2luks-extended.8.gz
 chmod 644 /usr/share/man/man8/fido2luks-extended.8.gz
 ```
 
-## How to use it
+## Configuration
 
-⚠️ **Warning**: in theory, this can render your system unbootable, so make sure that you have a backup of your files or a working initramfs that you can use as a fallback in case things go wrong. In practice, I did not had any problems with this script, but you have been warned.
+Configuration can be done in `keyscript.sh`.
+
+**`FIDO2LUKS_DEBUG`**
+Set to `1` to enable technical debug messages. Defaults to `0`.
+
+**`FIDO2LUKS_LANG`**
+Set the language for user-facing messages. Supported values are `en` (English) and `sl` (Slovenian).  Defaults to English.
+              
+**`FIDO2LUKS_WAIT_SECONDS`**
+How many seconds to wait for the FIDO2 USB key to appear during initramfs boot. Default value is `15` seconds.
+
+**`FIDO2LUKS_TOUCH_SECONDS`**
+How many seconds to wait for user-presence touch confirmation. Defaults value is `20` seconds. Please note that maximum number of seconds depends on FIDO2 key's firmware, but here you can set lower value.
+
+## How to use the script
+
+⚠️ **Warning**: in theory, this software can render your system unbootable, so make sure that you have a backup of your files or a working initramfs that you can use as a fallback in case things go wrong. In practice, I did not had any problems with this script, but you have been warned.
 
 1. Install FIDO2 tools:
    ```
@@ -70,15 +74,15 @@ chmod 644 /usr/share/man/man8/fido2luks-extended.8.gz
 
 4. Generate a new initramfs with `update-initramfs -u`.
 
-That's it. Next time you boot the system, `fido2luks-extended` should detect if your FIDO2 token (security USB key) is inserted and use it to unlock the LUKS volume. If the token is not detected then it will fall back to using a regular passphrase as usual (called recovery passphrase).
+That's it. Next time you boot the system, `fido2luks-extended` should detect if your FIDO2 token (security USB key) is inserted and use it to unlock the LUKS volume. If the token is not detected then it will fall back to using a regular passphrase as usual (this is here called "recovery passphrase").
 
-If you have multiple tokens you can enroll all of them, and `fido2luks-extended` will detect which one to use at boot time.
+If you have multiple security USB keys (so called FIDO2 tokens) you can enroll all of them, and `fido2luks-extended` will detect which one to use at boot time.
 
-If the token is connected but not detected during boot, make sure that the initramfs contains the necessary drivers. Check your `initramfs.conf` and set `MODULES=most` or add the necessary modules manually.
+If the FIDO2 token is connected but not detected during boot, make sure that the initramfs contains the necessary drivers. Check your `initramfs.conf` and set `MODULES=most` or add the necessary modules manually.
 
 You can access man page with `man fido2luks-extended`.
 
-## Some useful commands with your FIDO2 key
+## Some useful commands with your FIDO2 USB key
 
 List currently connected FIDO tokens:
 ```
@@ -147,11 +151,9 @@ Since nothing is stored on the hardware token itself the user needs to provide s
 - The aforementioned salt (which should be random and different for each LUKS volume).
 - Some settings such as whether to require a PIN or presence verification (usually physically touching the USB key).
 
-Check out the scripts in the examples/ directory to see how to generate your own credentials and secrets. See also the `fido2-cred(1)` and `fido2-assert(1)` manpages for more details.
-
 ## Credits and license
 
-Original  [`fido2luks`](https://github.com/bertogg/fido2luks) script was written by Alberto Garcia. `fido2luks-extended` with Plymouth bootsplash integration, multilingual support, support for managing debug messages, countdown for confirming physical presence, support for all usable SystemD/FIDO2 token records from the LUKS2 header and some security hardening was writen by Matej Kovačič.
+Original [`fido2luks`](https://github.com/bertogg/fido2luks) script was written by Alberto Garcia. `fido2luks-extended` with Plymouth bootsplash integration, multilingual support, support for managing debug messages, countdown for confirming physical presence, support for all usable SystemD/FIDO2 token records from the LUKS2 header and some security hardening was writen by Matej Kovačič.
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
