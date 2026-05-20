@@ -6,7 +6,7 @@ An initramfs-tools extension to unlock LUKS encrypted volumes at boot time using
 
 Updated script has support for Plymouth bootsplash, multilingual support (currently English and Slovenian language) and can suppress technical/debug messages and show only user-friendly output.
 
-<img width="556" height="353" alt="image" src="https://github.com/user-attachments/assets/47e7e01f-b0ff-4fbe-a4d6-f766086c74f2" />
+<img width="600" alt="FIDO2LUKS extended in action" src="https://github.com/user-attachments/assets/23b48538-deb1-4c24-80ca-5ca740ddeca6" />
 
 Script was tested with Yubikey 5 NFC and Nitrokey 3A Mini on Debian 13.4, however it should support any FIDO2 key. It also supports multiple FIDO2 keys to unlock the volume.
 
@@ -48,6 +48,8 @@ How many seconds to wait for the FIDO2 USB key to appear during initramfs boot. 
 
 **`FIDO2LUKS_TOUCH_SECONDS`**
 How many seconds to wait for user-presence touch confirmation. Defaults value is `20` seconds. Please note that maximum number of seconds depends on FIDO2 key's firmware, but here you can set lower value.
+
+<img width="550" alt="Slovenian version of FIDO2LUKS extended" src="https://github.com/user-attachments/assets/47e7e01f-b0ff-4fbe-a4d6-f766086c74f2" />
 
 ## How to use the script
 
