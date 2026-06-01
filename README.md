@@ -12,7 +12,9 @@ Script was tested with Yubikey 5 NFC and Nitrokey 3A Mini on Debian 13.4, howeve
 
 ## Installation
 
-The most simple method is to run: `apt install ./fido2luks-extended_0.0.1_all.deb`.
+The most simple method is to run: `apt install ./fido2luks-extended_0.0.2_all.deb`.
+
+After that you need to edit your `/etc/crypttab` and run `update-initramfs -u -k all` (see "How to use the script").
 
 If you prefer manual installation you can run:
 ```
@@ -32,6 +34,7 @@ mkdir -p /usr/share/man/man8
 gzip -9n -c fido2luks-extended.8 > /usr/share/man/man8/fido2luks-extended.8.gz
 chmod 644 /usr/share/man/man8/fido2luks-extended.8.gz
 ```
+After that you also need to edit your `/etc/crypttab` and run `update-initramfs -u -k all` (see "How to use the script").
 
 ## Configuration
 
@@ -55,16 +58,16 @@ How many seconds to wait for user-presence touch confirmation. Defaults value is
 
 ⚠️ **Warning**: in theory, this software can render your system unbootable, so make sure that you have a backup of your files or a working initramfs that you can use as a fallback in case things go wrong. In practice, I did not had any problems with this script, but you have been warned.
 
-1. Install FIDO2 tools:
+1. **Install FIDO2 tools**:
    ```
    apt install libfido2-dev libfido2-1 fido2-tools -y
    ```
    
-2. Enroll your FIDO2 token into the LUKS volume, for example, if you have `/dev/nvme0n1p5` (so called "Encrypted LVM" on Debian):
+2. **Enroll your FIDO2 token into the LUKS volume**, for example, if you have `/dev/nvme0n1p5` (so called "Encrypted LVM" on Debian):
   1. `systemd-cryptenroll --fido2-device=auto --fido2-with-client-pin=true --fido2-with-user-presence=true /dev/nvme0n1p5`
   2. After that, if you run `cryptsetup luksDump /dev/nvme0n1p5` you should be able to see the `systemd-fido2` token data.
 
-3. Edit `/etc/crypttab` and add `keyscript=/lib/fido2luks-extended/keyscript.sh` to the options of the volume that you want to unlock (for instance `nvme0n1p5_crypt`):
+3. **Edit `/etc/crypttab`** and add `keyscript=/lib/fido2luks-extended/keyscript.sh` to the options of the volume that you want to unlock (for instance `nvme0n1p5_crypt`):
    ```
    sed -i \
    '/^nvme0n1p5_crypt /{
@@ -74,7 +77,7 @@ How many seconds to wait for user-presence touch confirmation. Defaults value is
    /etc/crypttab
    ```
 
-4. Generate a new initramfs with `update-initramfs -u -k all`.
+4. **Generate a new initramfs** with `update-initramfs -u -k all`.
 
 That's it. Next time you boot the system, `fido2luks-extended` should detect if your FIDO2 token (security USB key) is inserted and use it to unlock the LUKS volume. If the token is not detected then it will fall back to using a regular passphrase as usual (this is here called "recovery passphrase").
 
