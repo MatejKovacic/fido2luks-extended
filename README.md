@@ -12,7 +12,7 @@ Script was tested with Yubikey 5 NFC and Nitrokey 3A Mini on Debian 13.4, howeve
 
 ## Installation
 
-The most simple method is to run: `apt install ./fido2luks-extended_0.0.2_all.deb`.
+The most simple method is to download DEB package and run: `apt install ./fido2luks-extended_0.0.3_all.deb`.
 
 After that you need to edit your `/etc/crypttab` and run `update-initramfs -u -k all` (see "How to use the script").
 
