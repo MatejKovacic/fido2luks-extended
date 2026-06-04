@@ -12,6 +12,7 @@
 # - exactly one inserted FIDO2 authenticator expected
 # - try all usable systemd/FIDO2 token records from the LUKS2 header
 # - harden temporary files and fido2-assert error handling
+# - version 0.0.3 has support for 2-stage trusted boot - crypto key handoff from boot stage 1 to boot stage 2
 
 # NOTICE:
 # For this setup, where client PIN and touch are required, set the FIDO2 PIN first,
@@ -32,6 +33,15 @@
 # PID for the watchdog/countdown. With umask 077 and initramfs tmpfs, this is acceptable, 
 # but it is not as strong as a memory-only implementation in a different language.
 
+# Support for 2-stage trusted boot (crypto key handoff)
+# If stage-1 boot passed a temporary unlock key into this initramfs,
+# emit it to cryptsetup and remove it immediately.
+HANDOFF_KEY="/stage1-luks/key"
+if [ -r "$HANDOFF_KEY" ]; then
+    cat "$HANDOFF_KEY"
+    rm -f "$HANDOFF_KEY"
+    exit 0
+fi
 
 # Keep all temporary files private. FIDO2_OUT contains the derived unlock secret.
 umask 077
@@ -59,6 +69,9 @@ LUKS_TOKEN_LIST=$(mktemp -t tokenlist.XXXXXX)
 LUKS_TOKEN=$(mktemp -t token.XXXXXX)
 trap cleanup INT TERM HUP EXIT
 
+## CONFIGURATION
+################
+
 # Enable technical/debug messages shown via Plymouth and text console.
 # Set to 1 while testing. Keep 0 for normal use.
 FIDO2LUKS_DEBUG=${FIDO2LUKS_DEBUG:-0}
@@ -77,6 +90,8 @@ FIDO2LUKS_TOUCH_SECONDS=${FIDO2LUKS_TOUCH_SECONDS:-20}
 case "$FIDO2LUKS_TOUCH_SECONDS" in
     ''|*[!0-9]*) FIDO2LUKS_TOUCH_SECONDS=20 ;;
 esac
+
+################
 
 plymouth_available () {
     command -v plymouth >/dev/null 2>&1 && plymouth --ping >/dev/null 2>&1
@@ -100,7 +115,7 @@ msg_text () {
         sl:too_many_keys)
             printf '%s\n' "Vstavljen je več kot en varnostni USB ključ. Odstranite dodatne ključe in znova zaženite računalnik." ;;
         *:too_many_keys)
-            printf '%s\n' "More than one security USB key is inserted. Remove the extra keys and reboot." ;;
+            printf '%s\n' "More than one security USB key is inserted. Remove the extra keys and reboot the computer." ;;
 
         sl:pin_prompt)
             printf '%s\n' "Vnesite PIN za varnostni USB ključ" ;;
@@ -112,7 +127,7 @@ msg_text () {
 Potrdite svojo prisotnost.
 Dotaknite se varnostnega USB ključa ZDAJ.
 
-Ta poskus bo potekel čez ${_arg1}s.
+Čaz za potrditev prisotnosti bo potekel čez ${_arg1}s.
 EOF
             ;;
 
@@ -121,7 +136,7 @@ EOF
 Please confirm your presence.
 Touch the security USB key NOW.
 
-This attempt will time out in ${_arg1}s.
+Presence confirmation will time out in ${_arg1}s.
 EOF
             ;;
 
@@ -604,3 +619,4 @@ fi
 
 plymouth_message "$(msg_text passphrase_fallback)"
 /lib/cryptsetup/askpass "$(msg_text passphrase_prompt)"
+
